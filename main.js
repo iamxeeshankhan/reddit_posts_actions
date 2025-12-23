@@ -12,6 +12,13 @@
 // Select the shadow element and get the second slot as it is the parent of the saved posts.
 const feedRoot = document.querySelector("shreddit-feed").shadowRoot.children[2];
 
+// Statistics tracking
+let stats = {
+  totalProcessed: 0,
+  currentBatch: 0,
+  totalBatches: 0,
+};
+
 ///////////////////////////////////
 // Load Articles - needs to be called on every scroll
 ///////////////////////////////////
@@ -47,49 +54,117 @@ function waitRandom(min, max) {
 ///////////////////////////////////
 const unsave_posts = async function () {
   const articles = loadArticles();
+  const batchSize = articles.length;
+
+  if (batchSize === 0) {
+    console.log("No articles found to unsave.");
+    return false;
+  }
+
+  stats.totalBatches++;
+  stats.currentBatch = 0;
+
+  console.log(
+    `\n📦 Batch #${stats.totalBatches}: Found ${batchSize} posts to unsave`
+  );
 
   for (const el of articles) {
-    // Select the shreddit-post shadow element of the post
-    const post = el.querySelector("shreddit-post").shadowRoot;
+    try {
+      // Select the shreddit-post shadow element of the post
+      const post = el.querySelector("shreddit-post").shadowRoot;
 
-    // Get the credit-bar slot
-    const creditBarSlot = post.querySelector('slot[name="credit-bar"]');
+      // Get the credit-bar slot
+      const creditBarSlot = post.querySelector('slot[name="credit-bar"]');
 
-    // Get credit-bar slot children
-    const creditBarSlotChild = creditBarSlot.assignedElements({
-      flatten: true,
-    })[0];
+      // Get credit-bar slot children
+      const creditBarSlotChild = creditBarSlot.assignedElements({
+        flatten: true,
+      })[0];
 
-    // Select the nested span inside the assigned element
-    const targetSpan = creditBarSlotChild.querySelector(
-      "span.flex.items-center.pl-xs"
-    );
+      // Select the nested span inside the assigned element
+      const targetSpan = creditBarSlotChild.querySelector(
+        "span.flex.items-center.pl-xs"
+      );
 
-    // shreddit-async-loader gives us another shadow element
-    const shredditPostOverflowMenu = targetSpan.querySelector(
-      "shreddit-post-overflow-menu"
-    ).shadowRoot;
+      // shreddit-async-loader gives us another shadow element
+      const shredditPostOverflowMenu = targetSpan.querySelector(
+        "shreddit-post-overflow-menu"
+      ).shadowRoot;
 
-    const overflowButton = shredditPostOverflowMenu.children[0];
-    const rplDropDown = overflowButton.querySelector("rpl-dropdown").shadowRoot;
-    const rplPopper = rplDropDown.querySelector("rpl-popper").shadowRoot;
+      const overflowButton = shredditPostOverflowMenu.children[0];
+      const rplDropDown =
+        overflowButton.querySelector("rpl-dropdown").shadowRoot;
+      const rplPopper = rplDropDown.querySelector("rpl-popper").shadowRoot;
 
-    const activePopper = rplPopper.querySelector(
-      "div.popup.popup--active, div.popup"
-    );
-    const popperSlot = activePopper.querySelector("slot");
-    const popperSlotContent = popperSlot.assignedElements({ flatten: true })[0];
+      const activePopper = rplPopper.querySelector(
+        "div.popup.popup--active, div.popup"
+      );
+      const popperSlot = activePopper.querySelector("slot");
+      const popperSlotContent = popperSlot.assignedElements({
+        flatten: true,
+      })[0];
 
-    const hoverCard = popperSlotContent
-      .querySelector("slot")
-      .assignedElements({ flatten: true })[0];
+      const hoverCard = popperSlotContent
+        .querySelector("slot")
+        .assignedElements({ flatten: true })[0];
 
-    const liBtnSave = hoverCard.querySelector("li[id='post-overflow-save']");
+      const liBtnSave = hoverCard.querySelector("li[id='post-overflow-save']");
 
-    // Click the button
-    liBtnSave.querySelector("div[role='menuitem']").click();
+      // Click the button
+      liBtnSave.querySelector("div[role='menuitem']").click();
 
-    // Wait a random delay before next iteration
-    await waitRandom(500, 1500); // 0.5–1.5 seconds
+      stats.currentBatch++;
+      stats.totalProcessed++;
+
+      console.log(
+        `✓ Unsaved post ${stats.currentBatch}/${batchSize} (Total: ${stats.totalProcessed})`
+      );
+
+      // Wait a random delay before next iteration
+      await waitRandom(500, 1500); // 0.5–1.5 seconds
+    } catch (error) {
+      console.warn(
+        `✗ Failed to unsave post ${stats.currentBatch + 1}:`,
+        error.message
+      );
+      stats.currentBatch++;
+    }
   }
+
+  console.log(
+    `✅ Batch #${stats.totalBatches} complete: ${stats.currentBatch}/${batchSize} posts unsaved`
+  );
+  return true;
 };
+
+///////////////////////////////////
+// Auto scroll the page to load more posts/articles
+///////////////////////////////////
+async function auto_scroll() {
+  // Unsave all currently loaded posts first
+  const success = await unsave_posts();
+
+  if (!success) {
+    console.log("⚠️ No posts to process. Retrying in 3 seconds...");
+    setTimeout(auto_scroll, 3000);
+    return;
+  }
+
+  console.log("⬇️ Scrolling to load more posts...\n");
+
+  // Scroll to bottom smoothly
+  window.scrollTo({
+    top: document.body.scrollHeight,
+    behavior: "smooth",
+  });
+
+  // Wait for the scroll to render and posts to load
+  await new Promise((r) => setTimeout(r, 2000));
+
+  // Random delay before next scroll (1–3 seconds)
+  const delay = 1000 + Math.random() * 2000;
+  setTimeout(auto_scroll, delay);
+}
+
+console.log("🚀 Starting Reddit unsave automation...\n");
+auto_scroll();
