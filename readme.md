@@ -1,11 +1,35 @@
-This script programmatically navigates Reddit’s modern UI to locate and click the “Remove from saved” action on posts. The same traversal logic can be extended to perform other post actions in the future, such as Hide, Follow post, or Report, by targeting different menu items within the same overflow menu structure.
+# Reddit Posts Actions
+
+This script/extension programmatically navigates Reddit’s modern UI to locate and click the “Remove from saved” action on posts. The same traversal logic can be extended to perform other post actions in the future, such as Hide, Follow post, or Report, by targeting different menu items within the same overflow menu structure.
+
+[![GitHub](https://img.shields.io/badge/GitHub-iamxeeshankhan/reddit--posts--actions-blue?logo=github)](https://github.com/iamxeeshankhan/reddit-posts-actions)
+[![Version](https://img.shields.io/badge/version-1.0.0-green)]()
 
 ## How to use
+
+### Option 1: Console
+
 1. Open your Reddit saved posts page: `https://www.reddit.com/user/<username>/saved/`
 2. Open Chrome DevTools by pressing **F12**.
 3. Copy all the code from `main.js` and paste it into the **Console** tab.
 4. Press **Enter** to run the script.
 5. DON'T CLOSE THE TAB
+
+### Option 2: Chrome Extension
+
+- Download the Extension
+- Open Chrome Extensions Page
+  - Navigate to `chrome://extensions/`
+  - Or click: Menu (⋮) → Extensions → Manage Extensions
+- Toggle the "Developer mode" switch in the top-right corner
+- Load the Extension
+  - Click "Load unpacked"
+  - Select the `reddit-posts-actions` folder
+  - The extension icon should appear in your toolbar
+- Navigate to your saved posts
+  - `https://www.reddit.com/user/{your-username}/saved/`
+  - Or click your profile → Saved
+- Click the Reddit Posts Actions extension icon in your Chrome toolbar and then click on "Unsave Posts" button
 
 ## Reddit "Unsave" Element Hierarchy (for analysis)
 
@@ -28,11 +52,20 @@ To reach the **Unsave** button, the script traverses these layers:
 - **`rpl-popper` (Shadow Root)**: The pop-up container.
 - **`faceplate-menu` (Slot/Shadow)**: The final list containing the **Remove from Saved** button.
 
----
-
 ## 💡 Quick Tips for Maintainers
 
 - **Shadow Root**: You cannot find these with normal CSS. You must use `.shadowRoot` to enter each layer.
 - `console.log(<shadowroot_object>.children)` to view all the elements of a selected shadowRoot
 - **Slots**: These are "windows" showing content from elsewhere. Use `.assignedElements()` to see what is inside them.
 - **Maintenance**: If the script breaks, check if Reddit changed the **Slot** number (currently 2) or renamed the **credit-bar** slot.
+
+## 👨‍💻 Author
+
+**M. Zeeshan Khan**
+
+- GitHub: [@iamxeeshankhan](https://github.com/iamxeeshankhan)
+- Repository: [reddit-posts-actions](https://github.com/iamxeeshankhan/reddit-posts-actions)
+
+**If you find this extension useful, please ⭐ star the repository!**
+
+[Report Bug](https://github.com/iamxeeshankhan/reddit-posts-actions/issues) · [Request Feature](https://github.com/iamxeeshankhan/reddit-posts-actions/issues)
